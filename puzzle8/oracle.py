@@ -50,6 +50,22 @@ def distances():
     return _DISTANCES
 
 
+_BY_DEPTH = None
+
+
+def states_at_depth(depth):
+    """Every state exactly `depth` moves from GOAL, sorted, so a seeded
+    sample from it is reproducible. Empty outside 0..31."""
+    global _BY_DEPTH
+    if _BY_DEPTH is None:
+        _BY_DEPTH = {}
+        for state, d in distances().items():
+            _BY_DEPTH.setdefault(d, []).append(state)
+        for pool in _BY_DEPTH.values():
+            pool.sort()
+    return _BY_DEPTH.get(depth, [])
+
+
 def optimal_distance(state):
     """Exact number of moves from `state` to GOAL.
 
