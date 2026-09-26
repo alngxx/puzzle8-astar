@@ -45,6 +45,18 @@ def test_parse_rejects_bad_input_with_specific_message(text, message):
         parse_state(text)
 
 
+@pytest.mark.parametrize("text, tile", [
+    # str.isdigit() is True for both, but int() treats them differently:
+    # it rejects the superscript (raising a bare ValueError, not ParseError)
+    # and silently accepts the Arabic-Indic digit as a real tile.
+    ("12345678²", "'²'"),                      # superscript two
+    ("١٢٣٤٥٦٧٨٠", "'١'"),  # Arabic-Indic 1-8,0
+])
+def test_parse_rejects_non_ascii_digits(text, tile):
+    with pytest.raises(ParseError, match=f"invalid tile {tile}"):
+        parse_state(text)
+
+
 # --- Moves ------------------------------------------------------------------
 
 def test_neighbour_counts_by_blank_position():

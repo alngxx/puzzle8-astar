@@ -22,6 +22,10 @@ MOVE_DELTAS = {"U": -SIZE, "D": SIZE, "L": -1, "R": 1}
 INVERSE_MOVE = {"U": "D", "D": "U", "L": "R", "R": "L"}
 
 
+# A tile token: ASCII digits only, so int() below can never see anything else.
+ASCII_DIGITS = re.compile(r"[0-9]+")
+
+
 class ParseError(ValueError):
     """Raised when a puzzle string is not a valid 8-puzzle state."""
 
@@ -62,7 +66,11 @@ def parse_state(text):
         tokens = list(text)  # compact form: one character per tile
 
     for tok in tokens:
-        if not tok.isdigit():
+        # Deliberately not str.isdigit(): that accepts non-ASCII digit-like
+        # characters, which either crash int() with a bare ValueError (e.g.
+        # the superscript '2') or parse silently into a tile the user never
+        # typed (e.g. the Arabic-Indic '1'). Only ASCII 0-9 is a tile.
+        if not ASCII_DIGITS.fullmatch(tok):
             raise ParseError(f"invalid tile {tok!r}: tiles must be digits 0-8")
     if len(tokens) != N_CELLS:
         raise ParseError(f"expected {N_CELLS} tiles, got {len(tokens)}")
