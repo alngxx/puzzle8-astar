@@ -28,7 +28,7 @@ from puzzle8.heuristics import linear_conflict, manhattan
 from puzzle8.oracle import states_at_depth
 from puzzle8.search import astar
 
-BUCKETS = (("shallow", 5, 10), ("medium", 15, 20), ("hard", 25, 31))
+BUCKETS = (("shallow", 5, 10), ("medium", 15, 20), ("deep", 21, 24), ("hard", 25, 31))
 HEURISTICS = (("manhattan", manhattan), ("linear", linear_conflict))
 DEFAULT_PER_BUCKET = 20
 METRICS = ("expanded", "generated", "ms")

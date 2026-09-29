@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 import puzzle8.cli as cli
+from puzzle8.bench import BUCKETS
 from puzzle8.board import GOAL, apply_moves, parse_state
 from puzzle8.cli import main
 from puzzle8.oracle import optimal_distance
@@ -156,7 +157,7 @@ def test_random_rejects_impossible_depths(capsys, depth):
 def test_compare_prints_the_table(capsys):
     code, out, _ = run(capsys, "compare", "--per-bucket", "2", "--seed", "1")
     assert code == 0
-    for bucket in ("shallow", "medium", "hard"):
+    for bucket, _, _ in BUCKETS:
         assert bucket in out
     assert "every path checked" in out
     assert "pass --seed" not in out  # a seed was given
@@ -173,8 +174,9 @@ def test_compare_writes_csv(capsys, tmp_path):
                        "--csv", str(target))
     assert code == 0
     lines = target.read_text().splitlines()
-    assert len(lines) == 1 + 3 * 2  # header + 2 states in each of 3 buckets
-    assert "Wrote 6 rows" in out
+    rows = 2 * len(BUCKETS)  # 2 states in each bucket
+    assert len(lines) == 1 + rows  # plus the header
+    assert f"Wrote {rows} rows" in out
 
 
 def test_compare_unwritable_csv_exits_2_before_running(capsys, tmp_path):

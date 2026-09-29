@@ -41,9 +41,11 @@ def test_linear_conflict_expands_no_more_than_manhattan(text):
 
 # --- ...but not on every state, and why that is still correct ----------------
 
-# On these 12 of 3000 random states (seed 41052), linear conflict expands MORE
-# nodes than Manhattan. Dominance does not promise otherwise. A* with a
-# consistent heuristic must expand every state with f < C* (C* = optimal
+# On these 12 of 3000 random states, linear conflict expands MORE nodes than
+# Manhattan. The 3000 are random.Random(41052).sample(sorted(distances()), 3000),
+# uniform over the whole solvable space; the 12 are every state in that sample
+# where linear conflict expands more. Dominance does not promise otherwise.
+# A* with a consistent heuristic must expand every state with f < C* (C* = optimal
 # length), and since linear conflict >= Manhattan, the states it must expand
 # are a subset of Manhattan's. States with f = C* exactly are a different
 # matter: how many of those get expanded before the goal pops depends on

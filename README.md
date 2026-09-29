@@ -163,9 +163,10 @@ among all such states. With `--seed`, the same state comes back every time.
 python3 -m puzzle8 compare [--per-bucket N] [--seed S] [--csv PATH]
 ```
 
-Samples states in three depth buckets: shallow (5–10 moves), medium (15–20)
-and hard (25–31). It solves each state with both heuristics and reports the
-median and mean work.
+Samples states in four depth buckets: shallow (5–10 moves), medium (15–20),
+deep (21–24) and hard (25–31). Deep is where a random puzzle most likely
+lands: depths 21–24 hold 47% of all solvable states. It solves each state with
+both heuristics and reports the median and mean work.
 
 - **Sampling.** Each bucket takes `N` states (default 20), spread evenly over
   its depths and drawn uniformly within each depth. Depths are exact, taken
@@ -190,17 +191,22 @@ every path checked: length equals the oracle depth and replays to the goal
 bucket   depths   n  heuristic    median      mean    median      mean    median      mean
 shallow  5-10    20  manhattan       7.5       8.4      17.5      17.7      0.02      0.02
                      linear          7.5       8.2      17.5      17.4      0.03      0.03
-                     ratio          1.00      1.02      1.00      1.02      0.66      0.67
+                     ratio          1.00      1.02      1.00      1.02      0.65      0.67
                      linear expanded more nodes than manhattan on 0 of 20 states
 
-medium   15-20   20  manhattan       122     164.4     204.5     271.9      0.22      0.30
+medium   15-20   20  manhattan       122     164.4     204.5     271.9      0.21      0.30
                      linear         71.5      87.5     123.5     147.8      0.20      0.24
-                     ratio          1.71      1.88      1.66      1.84      1.11      1.27
+                     ratio          1.71      1.88      1.66      1.84      1.06      1.28
                      linear expanded more nodes than manhattan on 0 of 20 states
 
-hard     25-31   20  manhattan      2698    3757.3    4216.5    5840.1      5.03      7.17
-                     linear         1444      1947    2267.5    3072.1      3.82      5.27
-                     ratio          1.87      1.93      1.86      1.90      1.32      1.36
+deep     21-24   20  manhattan     418.5     593.4       683     958.1      0.75      1.08
+                     linear          221     289.1     366.5     473.2      0.59      0.77
+                     ratio          1.89      2.05      1.86      2.02      1.28      1.39
+                     linear expanded more nodes than manhattan on 0 of 20 states
+
+hard     25-31   20  manhattan    3498.5    4078.2    5492.5    6336.2      6.75      7.82
+                     linear       1800.5    2155.3      2856    3396.4      4.89      5.90
+                     ratio          1.94      1.89      1.92      1.87      1.38      1.33
                      linear expanded more nodes than manhattan on 0 of 20 states
 
 ratio = manhattan / linear: above 1 means linear did less work.
@@ -211,19 +217,42 @@ ratio usually trails the node ratio.
 
 Node counts are the same on every machine and every run with the same seed.
 Times are not: they depend on the machine, and a single system hiccup can
-visibly move a mean made of 0.02 ms searches, so medians are the safer time
-figures. Python's garbage collector is paused while searches are timed (as
+visibly move a mean, so medians are the safer time figures. In one
+`--per-bucket 200 --seed 41052` run, a single deep-bucket search took 142 ms
+instead of its usual 2 ms. That one search dragged the bucket's mean time ratio
+to 0.78, suggesting linear was slower, while the median ratio stayed at 1.26. Python's garbage collector is paused while searches are timed (as
 `timeit` does). Its collections otherwise landed inside individual searches
 and inflated the means.
 
-**Reading the results.** Linear conflict makes no real difference on shallow
-puzzles, and roughly halves the nodes expanded on medium and hard ones. It
-saves less time than nodes, because each estimate costs more to compute.
+**Reading the results.** On shallow puzzles linear conflict saves no nodes and
+costs time: each search takes about 1.5× as long (time ratio 0.65–0.67),
+because every estimate costs more and there is almost nothing to prune. From
+medium depth on it pays off. The figures below come from a
+`--per-bucket 200 --seed 41052 --csv` run, taking Manhattan ÷ linear for each
+state separately and then the median (interquartile range in brackets):
 
-It does **not** expand fewer nodes on every single state. On about 0.4% of
-states it expands more: 12 of 3,000 random states in the tests, and 2 of 600
-in a `--per-bucket 200 --seed 7` run. This is expected, and the table counts
-it rather than hiding it. A* must expand every state whose estimated total
+| Bucket | Nodes expanded | Time |
+|---|---|---|
+| shallow | 1.00 (1.00–1.00) | 0.67 (0.64–0.69) |
+| medium | 1.63 (1.40–1.88) | 1.08 (0.93–1.25) |
+| deep | 1.96 (1.66–2.29) | 1.33 (1.10–1.53) |
+| hard | 1.91 (1.79–2.09) | 1.35 (1.25–1.47) |
+
+That is about 40% fewer nodes on medium puzzles and roughly half on deep and
+hard ones. Time improves less than nodes, because each estimate costs more to
+compute. On a quarter of medium puzzles the time ratio is below 0.93, so there
+linear is slower overall.
+
+It does **not** expand fewer nodes on every single state. Two samples, drawn
+differently, so their rates are reported separately rather than pooled:
+
+- **Uniform over all solvable states:** 12 of 3,000 (0.4%, 95% interval
+  roughly 0.2–0.7%). These are the 12 states in
+  `tests/test_heuristic_comparison.py`, which says how to regenerate them.
+- **The depth-bucketed run above:** 3 of 800. There were 2 in medium and 1 in
+  deep, and linear expanded between 2 and 49 more nodes on them.
+
+This is expected, and the table counts it rather than hiding it. A* must expand every state whose estimated total
 cost f is below the optimal cost C*. Linear conflict is never below
 Manhattan, so the states it must expand are always a subset of Manhattan's.
 But states with f exactly equal to C* are expanded or not depending on
@@ -245,7 +274,7 @@ tie-breaking, and there linear conflict can be unlucky.
 python3 -m pytest
 ```
 
-This runs 146 tests in about 10 seconds. Where it's feasible, properties are
+This runs 147 tests in about 10 seconds. Where it's feasible, properties are
 checked over **all 181,440 solvable states** rather than a sample:
 
 | File | What it checks |

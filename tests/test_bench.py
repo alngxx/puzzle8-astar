@@ -64,7 +64,7 @@ def test_sampling_is_reproducible_with_a_seed():
 
 def test_every_run_is_at_its_oracle_depth():
     runs = run_comparison(per_bucket=3, seed=5)
-    assert len(runs) == 9
+    assert len(runs) == 3 * len(BUCKETS)
     for run in runs:
         for result in run.results.values():
             assert result.length == run.depth
