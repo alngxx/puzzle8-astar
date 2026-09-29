@@ -1,8 +1,8 @@
 # puzzle8-astar
 
 An optimal solver for the 8-puzzle (the 3×3 sliding-tile puzzle), using A*
-search with two heuristics: **Manhattan distance** and **Manhattan + linear
-conflict**. A breadth-first search of the whole state space gives the true
+search with two heuristics: **Manhattan distance** and **Manhattan + Linear
+conflict**. A BFS of the whole state space gives the true
 optimal distance of all 181,440 solvable states, and everything is checked
 against it. The 8-puzzle was chosen over the 15-puzzle because its state
 space is small enough to verify every state exhaustively.
@@ -13,10 +13,10 @@ linear conflict sometimes expands more nodes than Manhattan, see the report.
 
 ## Requirements
 
-- Python 3.10 or newer. The solver uses only the standard library.
-- [pytest](https://pytest.org), only for the tests.
+- Python 3.10 or newer.
+- [pytest](https://pytest.org), only for tests.
 
-There is no install step. Clone the repository and run everything from its
+There is no install step. Clone the repo and run everything from its
 root folder:
 
 ```bash
