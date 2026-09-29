@@ -1,20 +1,18 @@
 """Depth-bucketed comparison of the Manhattan and linear-conflict heuristics.
 
 Each bucket covers a range of optimal solution lengths. States are sampled by
-their exact depth according to the BFS oracle -- not by random walks, whose
-length only bounds the depth from above. Samples are spread evenly across the
-depths in a bucket and drawn uniformly within each depth; uniform over the
-whole bucket would almost never pick the rarest depths (depth 31 has 2 states,
-depth 25 has 15578).
+exact depth from the BFS oracle, not by random walks, whose length only
+bounds depth from above. Samples spread evenly over a bucket's depths and are
+uniform within each depth. Uniform over the whole bucket would almost never
+pick the rarest depths (depth 31 has 2 states, depth 25 has 15578).
 
-Both heuristics solve the same states. Every path is checked before it is
-counted: its length must equal the oracle depth and it must replay to the
-goal. A failure raises ComparisonError rather than producing numbers.
+Both heuristics solve the same states. A path counts only if its length
+equals the oracle depth and it replays to the goal; otherwise the run raises
+ComparisonError instead of producing numbers.
 
 The summary reports medians and means, not a per-state verdict: linear
-conflict expands fewer nodes on the large majority of states but not all of
-them (see tests/test_heuristic_comparison.py), and the table counts the
-exceptions instead of hiding them.
+conflict expands fewer nodes on most states but not all (see
+tests/test_heuristic_comparison.py), and the table counts the exceptions.
 """
 
 import csv
@@ -60,9 +58,9 @@ class BucketSummary:
 def sample_bucket(low, high, n, rng):
     """Up to n (state, depth) pairs with depth in low..high.
 
-    Depths take turns contributing one state each until n are chosen, skipping
-    any depth that has run out, so the rare deep ones are not swamped. Within
-    a depth, states are sampled uniformly without replacement.
+    Depths take turns adding one state each until n are chosen, skipping any
+    depth that runs out, so rare deep ones are not swamped. Within a depth,
+    states are sampled uniformly without replacement.
     """
     pools = {d: states_at_depth(d) for d in range(low, high + 1)}
     quota = dict.fromkeys(pools, 0)
@@ -99,15 +97,15 @@ def run_comparison(per_bucket=DEFAULT_PER_BUCKET, seed=None,
     """Solve each sampled state with every heuristic; return the runs."""
     rng = random.Random(seed)
     # Untimed warm-up: the first search in a fresh process runs about twice
-    # as slow (measured: ~0.04 ms vs ~0.016 ms on a depth-7 state), and that
-    # would otherwise land on whichever heuristic happens to go first.
+    # as slow (~0.04 ms vs ~0.016 ms on a depth-7 state), which would
+    # penalise whichever heuristic goes first.
     for _, heuristic in heuristics:
         astar(states_at_depth(10)[0], heuristic=heuristic)
-    # The garbage collector is paused while searches are timed, as timeit
-    # does: its collections landed inside individual searches and inflated
-    # mean times (medium bucket, seed 41052: 0.40 ms with it on, 0.30 ms
-    # off, against a 0.22 ms median). The search creates no reference
-    # cycles, so memory is still freed as usual by reference counting.
+    # Pause the garbage collector during timing, as timeit does. Its
+    # collections landed inside single searches and inflated mean times
+    # (medium bucket, seed 41052: 0.40 ms with it on, 0.30 ms off, against a
+    # 0.22 ms median). The search makes no reference cycles, so reference
+    # counting still frees its memory.
     was_enabled = gc.isenabled()
     gc.disable()
     try:

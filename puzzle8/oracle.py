@@ -1,20 +1,17 @@
-"""Ground truth: the exact optimal distance for every solvable state.
+"""Ground truth: the exact optimal distance of every solvable state.
 
-This is the reference everything else is checked against, so it is kept
-deliberately independent of the solver. It uses breadth-first search and
-nothing else -- no heuristic, no priority queue, no A*. BFS explores states
-in order of distance, so the first time it reaches a state it has reached it
-by a shortest path; that is true by construction and needs no assumption
-about any heuristic being admissible.
+Everything else is checked against this table, so it shares no code with
+search.py: plain breadth-first search, with no heuristic and no priority
+queue. BFS reaches each state first by a shortest path, whatever any
+heuristic says.
 
-The search runs outward from GOAL rather than inward from some start. Every
-move is reversible (the blank steps back the way it came), so the distance
-from GOAL to a state equals the distance from that state to GOAL, and one
-sweep yields the answer for every state at once.
+The search runs outward from GOAL. Every move is reversible, so the distance
+from GOAL to a state equals the distance back, and one sweep covers every
+state.
 
 Only solvable states are reachable, so the table holds 9!/2 = 181440 of the
-9! = 362880 arrangements -- the rest have odd inversion parity and are
-absent by construction, not by being filtered out.
+9! = 362880 arrangements. The odd-parity half is never reached, rather than
+filtered out.
 """
 
 from collections import deque
@@ -43,7 +40,7 @@ _DISTANCES = None
 
 
 def distances():
-    """The full table, built on first use and reused afterwards."""
+    """The full table, built on first use."""
     global _DISTANCES
     if _DISTANCES is None:
         _DISTANCES = build_distance_table()
@@ -54,8 +51,8 @@ _BY_DEPTH = None
 
 
 def states_at_depth(depth):
-    """Every state exactly `depth` moves from GOAL, sorted, so a seeded
-    sample from it is reproducible. Empty outside 0..31."""
+    """Every state exactly `depth` moves from GOAL, sorted so a seeded sample
+    is reproducible. Empty outside 0..31."""
     global _BY_DEPTH
     if _BY_DEPTH is None:
         _BY_DEPTH = {}
@@ -69,7 +66,7 @@ def states_at_depth(depth):
 def optimal_distance(state):
     """Exact number of moves from `state` to GOAL.
 
-    Raises KeyError for an unsolvable state, which has no distance at all --
-    it is absent from the table rather than stored as infinity.
+    Raises KeyError for an unsolvable state: it has no entry, not an
+    infinite one.
     """
     return distances()[state]

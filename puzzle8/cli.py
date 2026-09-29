@@ -67,7 +67,7 @@ def cmd_solve(args):
         return EXIT_UNSOLVABLE
 
     result = astar(state, heuristic=HEURISTICS[args.heuristic])
-    # Replayed independently rather than trusted, even here.
+    # Replay the path rather than trust it.
     if apply_moves(state, result.path) != GOAL:
         raise AssertionError("search returned a path that does not reach the goal")
 
@@ -116,8 +116,8 @@ def _board_sequence(state, path):
 def cmd_random(args):
     if not 0 <= args.depth <= MAX_DEPTH:
         raise BadInput(f"--depth must be between 0 and {MAX_DEPTH}, got {args.depth}")
-    # Drawn from the oracle's list of states at exactly this depth, so the
-    # depth is exact -- a random walk of D moves may land closer than D.
+    # Drawn from the oracle's states at exactly this depth: a random walk of
+    # D moves can land closer than D.
     state = random.Random(args.seed).choice(states_at_depth(args.depth))
     print(_label(state))
     return EXIT_OK

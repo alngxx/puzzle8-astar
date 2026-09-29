@@ -45,13 +45,12 @@ def test_linear_conflict_expands_no_more_than_manhattan(text):
 # Manhattan. The 3000 are random.Random(41052).sample(sorted(distances()), 3000),
 # uniform over the whole solvable space; the 12 are every state in that sample
 # where linear conflict expands more. Dominance does not promise otherwise.
-# A* with a consistent heuristic must expand every state with f < C* (C* = optimal
-# length), and since linear conflict >= Manhattan, the states it must expand
-# are a subset of Manhattan's. States with f = C* exactly are a different
-# matter: how many of those get expanded before the goal pops depends on
-# tie-breaking, and linear conflict lifts many states from f < C* up to
-# exactly C*, into that tie band. The tests below confirm that all of the
-# surplus is there.
+# A* with a consistent heuristic must expand every state with f < C* (C* =
+# optimal length), and since linear conflict >= Manhattan, its forced set is a
+# subset of Manhattan's. How many states with f = C* exactly get expanded
+# before the goal pops depends on tie-breaking. On all 12 states, linear
+# conflict's f = C* band is also smaller than Manhattan's, yet A* works
+# through more of it. The tests below confirm the surplus is all in that band.
 MORE_EXPANSIONS_UNDER_LC = [
     "230856174", "760584312", "148720653", "740531826", "841537062", "751832640",
     "628340175", "236015784", "041785263", "306572184", "041238675", "751480326",
@@ -109,3 +108,9 @@ def test_extra_expansions_are_all_ties_at_the_optimal_cost(monkeypatch, text):
     lc_below = {s for s in by_lc if g[s] + linear_conflict(s) < cost}
     m_below = {s for s in by_manhattan if g[s] + manhattan(s) < cost}
     assert lc_below <= m_below
+
+    # Linear conflict's f = C* band is smaller too: the surplus comes from how
+    # far tie-breaking walks into the band, not from the band's size.
+    def band(h):
+        return sum(g[s] + h(s) == cost for s in g)
+    assert band(linear_conflict) < band(manhattan)

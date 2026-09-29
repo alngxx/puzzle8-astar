@@ -1,10 +1,9 @@
-"""Heuristics estimating the moves still needed to reach the goal.
+"""Estimates of the moves left to reach the goal.
 
-A heuristic is *admissible* if it never overestimates the true remaining
-distance, which is what makes A* return optimal solutions, and *consistent*
-if h(s) <= 1 + h(s') for every neighbour s', which additionally means no
-state is ever reached again by a cheaper path. Both properties are checked
-exhaustively against the BFS oracle in the tests, over the whole state space.
+A heuristic is admissible if it never overestimates the true distance, which
+makes A* optimal. It is consistent if h(s) <= 1 + h(s') for every neighbour
+s', which means A* never reaches an expanded state again by a cheaper path.
+The tests check both properties against the BFS oracle on every state.
 """
 
 from itertools import product
@@ -25,19 +24,18 @@ def _distance_table():
     return tuple(table)
 
 
-# Precomputed once at import: the search calls manhattan() millions of times,
-# so the per-call work is a table lookup, never row/column arithmetic.
+# Precomputed at import, so each call is table lookups, not row/column
+# arithmetic.
 DISTANCE = _distance_table()
 
 
 def manhattan(state):
-    """Sum over tiles of the moves needed to slide each one home alone.
+    """Sum of each tile's distance from its goal cell.
 
-    The blank is excluded: it is not a tile, and counting it would break
-    admissibility, since a single move relocates both a tile and the blank.
-    Every move shifts exactly one tile by one cell, so it changes this sum
-    by at most 1 -- hence no overestimate, and never a jump of more than 1
-    between neighbouring states.
+    The blank is not a tile. Counting it would break admissibility, since one
+    move shifts both the blank and a tile. Each move shifts one tile one cell
+    and changes the sum by 1, so reaching the goal's 0 takes at least h
+    moves, and neighbours never differ by more than 1.
     """
     return sum(DISTANCE[tile][index] for index, tile in enumerate(state) if tile)
 
@@ -51,17 +49,15 @@ GOAL_COL = tuple(GOAL.index(tile) % SIZE for tile in range(N_CELLS))
 def _tiles_to_lift(goal_positions):
     """Fewest tiles that must leave a line so the rest are in goal order.
 
-    `goal_positions` lists, in their current order along the line, where
-    each tile belongs within it. Tiles in a line cannot pass one another, so
-    the ones allowed to stay must already be in increasing goal order: the
-    most that can stay is the longest increasing subsequence, and every
-    other tile has to step out of the line and back.
+    `goal_positions` lists where each tile belongs within the line, in current
+    order. Tiles in a line cannot pass each other, so the ones that stay must
+    already be in increasing goal order. At most the longest increasing
+    subsequence can stay; every other tile must step out and back.
 
-    Counting conflicting *pairs* instead overcounts: for 3 2 1 all three
-    pairs conflict, but lifting 3 and 1 -- two tiles, not three -- lets 2
-    stay, and moving those two out of the way is enough.
+    Counting conflicting pairs instead overcounts: in 3 2 1 all three pairs
+    conflict, but lifting only 3 and 1 lets 2 stay (+4, not +6).
     """
-    longest = [1] * len(goal_positions)  # longest run ending at each tile
+    longest = [1] * len(goal_positions)  # LIS length ending at each tile
     for i in range(len(goal_positions)):
         for j in range(i):
             if goal_positions[j] < goal_positions[i]:
@@ -78,9 +74,9 @@ def _line_penalties(line, line_of, position_in_line):
     return table
 
 
-# Precomputed for every possible line content (9^3 per line), so a call is six
-# lookups on top of Manhattan. ROW_PENALTY[r] looks at tiles whose goal row
-# is r and compares their goal columns; COL_PENALTY the other way round.
+# One table per line covering all 9^3 contents, so a call adds six lookups to
+# Manhattan. ROW_PENALTY[r] compares the goal columns of tiles whose goal row
+# is r; COL_PENALTY swaps rows and columns.
 ROW_PENALTY = tuple(_line_penalties(r, GOAL_ROW, GOAL_COL) for r in range(SIZE))
 COL_PENALTY = tuple(_line_penalties(c, GOAL_COL, GOAL_ROW) for c in range(SIZE))
 
@@ -88,19 +84,19 @@ COL_PENALTY = tuple(_line_penalties(c, GOAL_COL, GOAL_ROW) for c in range(SIZE))
 def linear_conflict(state):
     """Manhattan plus 2 moves per tile that must leave its goal line.
 
-    Admissible: a tile already in its goal row has no vertical Manhattan
-    distance, so if it has to step out of the row to let others pass, those
-    2 vertical moves are uncounted by Manhattan. Row penalties only ever add
-    vertical detours and column penalties horizontal ones, so the two never
-    count the same move twice.
+    Admissible: count each tile's vertical and horizontal moves separately. A
+    tile in its goal row has vertical distance 0, so leaving the row and
+    coming back costs at least 2 vertical moves that Manhattan ignores.
+    Columns work the same way with horizontal moves. Each move shifts one
+    tile in one direction, so adding these per-tile bounds counts no move
+    twice.
 
     Consistent: a move shifts one tile t by one cell. Say it is horizontal.
-    The order of t's row is unchanged, so no row penalty changes, and t
-    only counts toward a column penalty in its goal column. If it enters
-    that column, Manhattan drops by 1 and the penalty rises by 0 or 2; if it
-    leaves, Manhattan rises by 1 and the penalty drops by 0 or 2; otherwise
-    only Manhattan changes. Either way h changes by exactly 1. (Vertical
-    moves are the same with rows and columns swapped.)
+    Row order is unchanged, so no row penalty changes, and t counts only
+    toward its goal column's penalty. Entering that column lowers Manhattan
+    by 1 and raises the penalty by 0 or 2; leaving does the reverse; any
+    other move changes only Manhattan. Either way h changes by exactly 1.
+    Vertical moves work the same with rows and columns swapped.
     """
     total = manhattan(state)
     for r in range(SIZE):
