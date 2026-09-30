@@ -11,6 +11,13 @@ It also includes a command-line tool and a comparison of the work each
 heuristic saves at different puzzle depths. For the findings, including why
 linear conflict sometimes expands more nodes than Manhattan, see the report.
 
+## Demo video
+
+[![Watch the demo video](demo-thumbnail.jpg)](demo.mp4)
+
+A screen recording (9 min 52 s) of the code and the tool running. Click the
+image to play it, or open [demo.mp4](demo.mp4) directly.
+
 ## Requirements
 
 - Python 3.10 or newer.
