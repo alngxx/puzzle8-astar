@@ -1,14 +1,7 @@
-"""8-puzzle board: representation, parsing, moves and solvability.
+"""8-puzzle board: state representation, parsing, moves and solvability.
 
-A state is a tuple of 9 ints in row-major order, 0 for the blank:
-
-    (1, 2, 3,
-     4, 5, 6,      is the goal, printed as    1 2 3
-     7, 8, 0)                                 4 5 6
-                                              7 8 .
-
-Moves name the direction the BLANK moves, not the tile:
-U = up, D = down, L = left, R = right.
+A state is a 9-tuple in row-major order with 0 as the blank. Moves (U, D,
+L, R) name the direction the blank moves, not the tile.
 """
 
 import re
@@ -17,12 +10,13 @@ SIZE = 3
 N_CELLS = SIZE * SIZE
 GOAL = (1, 2, 3, 4, 5, 6, 7, 8, 0)
 
-# Index offset of each blank move in the flat tuple.
+# Blank move -> index offset.
 MOVE_DELTAS = {"U": -SIZE, "D": SIZE, "L": -1, "R": 1}
 INVERSE_MOVE = {"U": "D", "D": "U", "L": "R", "R": "L"}
 
 
-# A tile token: ASCII digits only, so int() sees nothing else.
+# Not str.isdigit(): it accepts '²' (int() then raises ValueError) and '١'
+# (silently parsed as 1).
 ASCII_DIGITS = re.compile(r"[0-9]+")
 
 
@@ -49,16 +43,12 @@ def _legal_moves(index):
     return tuple(moves)
 
 
-# NEIGHBOURS[i] = legal (move, target) pairs with the blank at index i,
-# precomputed so the search skips the row/column arithmetic.
+# NEIGHBOURS[i]: legal (move, target) pairs with the blank at index i.
 NEIGHBOURS = tuple(_legal_moves(i) for i in range(N_CELLS))
 
 
 def parse_state(text):
-    """Parse '123456780', '1 2 3 4 5 6 7 8 0' or '1,2,3,4,5,6,7,8,0'.
-
-    Raises ParseError naming the first problem found.
-    """
+    """Parse '123456780', '1 2 3 4 5 6 7 8 0' or '1,2,3,4,5,6,7,8,0'."""
     text = text.strip()
     if re.search(r"[,\s]", text):
         tokens = [t for t in re.split(r"[,\s]+", text) if t]
@@ -66,17 +56,13 @@ def parse_state(text):
         tokens = list(text)  # compact form: one character per tile
 
     for tok in tokens:
-        # Not str.isdigit(): it accepts non-ASCII digits, which int() either
-        # rejects with a bare ValueError (superscript '2') or silently parses
-        # into a tile the user never typed (Arabic-Indic '1').
         if not ASCII_DIGITS.fullmatch(tok):
             raise ParseError(f"invalid tile {tok!r}: tiles must be digits 0-8")
     if len(tokens) != N_CELLS:
         raise ParseError(f"expected {N_CELLS} tiles, got {len(tokens)}")
 
     tiles = [int(t) for t in tokens]
-    # Checked before duplicates: nine tiles from 1-8 must repeat one, and
-    # "missing blank" is the more useful message.
+    # Before the duplicate check: without a 0, some tile must repeat.
     if 0 not in tiles:
         raise ParseError("missing blank: the state must contain a 0")
     for t in tiles:
@@ -113,11 +99,7 @@ def apply_move(state, move):
 
 
 def apply_moves(state, moves):
-    """Replay a move sequence (e.g. 'ULDR' or ['U', 'L']) from `state`.
-
-    Independent of the search code, so solutions are checked by replay, not
-    trusted.
-    """
+    """Replay `moves` (e.g. 'ULDR') from `state`; used to verify search output."""
     for i, move in enumerate(moves, start=1):
         try:
             state = apply_move(state, move)
@@ -127,7 +109,7 @@ def apply_moves(state, moves):
 
 
 def inversions(state):
-    """Count pairs of tiles (a, b) with a before b but a > b, ignoring the blank."""
+    """Count tile pairs (a, b) with a before b and a > b, ignoring the blank."""
     tiles = [t for t in state if t != 0]
     count = 0
     for i in range(len(tiles)):
@@ -140,10 +122,8 @@ def inversions(state):
 def is_solvable(state):
     """True iff `state` can reach GOAL.
 
-    On a 3-wide board, a left/right move keeps the tile order, and an up/down
-    move jumps one tile past 2 others, changing the inversion count by -2, 0
-    or +2. Parity never changes and GOAL has 0 inversions, so only even
-    counts are solvable. (The rule holds for odd board widths only.)
+    Horizontal moves keep the tile order; vertical moves change the inversion
+    count by 0 or ±2. Parity is invariant and GOAL has 0 inversions.
     """
     return inversions(state) % 2 == 0
 

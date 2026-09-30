@@ -44,8 +44,7 @@ def test_samples_are_at_their_stated_depth_within_the_bucket(name, low, high):
 
 def test_samples_spread_evenly_over_depths():
     counts = Counter(d for _, d in sample_bucket(25, 31, 20, random.Random(1)))
-    # 7 depths share 20 states; depth 31 has only 2 states in total, so it
-    # gives 2 and the others make up the rest -- 3 each, evenly.
+    # Depth 31 has only 2 states; the other depths take 3 each.
     assert counts == {25: 3, 26: 3, 27: 3, 28: 3, 29: 3, 30: 3, 31: 2}
 
 
@@ -71,9 +70,7 @@ def test_every_run_is_at_its_oracle_depth():
 
 
 def test_a_non_optimal_path_stops_the_comparison(monkeypatch):
-    # Pretend the search returned a valid path two moves too long: "UD" at
-    # the goal moves the blank up from its corner and straight back. The
-    # comparison must refuse to report numbers built on it.
+    # A valid path two moves too long ("UD" from the goal) must be rejected.
     real_astar = bench.astar
 
     def padded(state, heuristic):
@@ -107,9 +104,7 @@ def test_summary_counts_the_exceptions_honestly():
 
 
 def test_known_exception_state_is_counted_not_hidden():
-    # 760584312 is one of the states where linear conflict expands more
-    # (tests/test_heuristic_comparison.py). A bucket holding just that state
-    # must report it in the table, not smooth it over.
+    # A state where linear conflict expands more must show up in the table.
     state = parse_state("760584312")
     run = bench.Run("only", 26, state, {
         "manhattan": astar(state, heuristic=manhattan),

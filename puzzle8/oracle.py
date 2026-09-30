@@ -1,24 +1,14 @@
-"""Ground truth: the exact optimal distance of every solvable state.
+"""Ground truth: the optimal distance of every solvable state, by BFS.
 
-Everything else is checked against this table, so it shares no code with
-search.py: plain breadth-first search, with no heuristic and no priority
-queue. BFS reaches each state first by a shortest path, whatever any
-heuristic says.
-
-The search runs outward from GOAL. Every move is reversible, so the distance
-from GOAL to a state equals the distance back, and one sweep covers every
-state.
-
-Only solvable states are reachable, so the table holds 9!/2 = 181440 of the
-9! = 362880 arrangements. The odd-parity half is never reached, rather than
-filtered out.
+Shares no code with search.py, so A* can be checked against it. Moves are
+reversible, so one sweep outward from GOAL covers every state.
 """
 
 from collections import deque
 
 from puzzle8.board import GOAL, neighbours
 
-# 9! / 2: half the arrangements are unreachable (see board.is_solvable).
+# 9!/2: the odd-parity half is unreachable.
 SOLVABLE_STATES = 181440
 
 
@@ -51,8 +41,7 @@ _BY_DEPTH = None
 
 
 def states_at_depth(depth):
-    """Every state exactly `depth` moves from GOAL, sorted so a seeded sample
-    is reproducible. Empty outside 0..31."""
+    """States exactly `depth` moves from GOAL, sorted for reproducible sampling."""
     global _BY_DEPTH
     if _BY_DEPTH is None:
         _BY_DEPTH = {}
@@ -64,9 +53,5 @@ def states_at_depth(depth):
 
 
 def optimal_distance(state):
-    """Exact number of moves from `state` to GOAL.
-
-    Raises KeyError for an unsolvable state: it has no entry, not an
-    infinite one.
-    """
+    """Moves from `state` to GOAL; KeyError if unsolvable."""
     return distances()[state]

@@ -1,12 +1,7 @@
-"""Hand-checkable sanity check for the BFS oracle and the Manhattan heuristic.
+"""Print short traces from the goal with the oracle distance and Manhattan
+estimate at each step, for checking by hand.
 
-Each case starts at the goal and applies a short move sequence, printing the
-board after every move alongside the oracle's distance and the heuristic's
-estimate. A state reached in N moves can be no further than N from the goal,
-so each trace can be checked by eye: the distance should count back down to
-zero, and the estimate should never exceed it.
-
-Run from the repo root:  python scripts/check_oracle.py
+Run from the repo root: python scripts/check_oracle.py
 """
 
 import sys

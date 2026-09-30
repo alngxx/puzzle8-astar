@@ -1,20 +1,9 @@
-"""Demonstrations of what breaks when A*'s safeguards are removed.
+"""Show what breaks when A*'s safeguards are removed. Not part of the solver.
 
-NOT part of the solver. Everything deliberately broken here -- the variant
-search and the bad heuristic -- is defined in this file only, so nothing in
-puzzle8/ can pick it up by accident.
+1. No duplicate detection: A* becomes tree search.
+2. Closed set with an admissible but inconsistent heuristic: suboptimal path.
 
-1. Duplicate detection. With no closed set and no best-g check, A* becomes
-   tree search and re-expands states once per path that reaches them.
-
-2. Closed set + inconsistent heuristic. The real solver's closed set never
-   reopens a state. That is safe for a consistent heuristic like Manhattan,
-   but with a heuristic that is admissible yet inconsistent, a cheaper path
-   to a closed state can turn up later and gets discarded.
-
-Everything is deterministic; the output is identical on every run.
-
-Run from the repo root:  python scripts/demonstrate_invariants.py
+Run from the repo root: python scripts/demonstrate_invariants.py
 """
 
 import heapq
@@ -30,19 +19,13 @@ from puzzle8.oracle import distances, optimal_distance
 from puzzle8.search import astar
 
 
-# --- Deliberately broken pieces (demonstration only) ------------------------
+# --- Deliberately broken pieces ---------------------------------------------
 
 def astar_variant(start, heuristic, duplicate_detection):
-    """A* without the closed set, for contrast with search.astar.
+    """A* without a closed set; returns (solution length, nodes expanded).
 
-    duplicate_detection="none":   tree search -- every generated state is
-                                  pushed, however it was reached.
-    duplicate_detection="best_g": push only on a strictly cheaper path, and
-                                  reopen already-expanded states if one
-                                  turns up.
-
-    Returns (solution length, nodes expanded). Same (f, h, counter) ordering
-    and goal-on-pop test as the real solver, so counts are comparable.
+    duplicate_detection: "none" (tree search) or "best_g" (push only cheaper
+    paths, reopening expanded states).
     """
     h0 = heuristic(start)
     frontier = [(h0, h0, 0, start, 0)]
@@ -69,12 +52,7 @@ def astar_variant(start, heuristic, duplicate_detection):
 
 
 def tile_one_home_heuristic(state):
-    """Exact distance if tile 1 is in its goal cell, otherwise 0.
-
-    Admissible: it is either the true distance or 0, never more. But wildly
-    inconsistent: moving tile 1 into or out of its home cell swings the
-    estimate between 0 and the full distance in a single move.
-    """
+    """Exact distance if tile 1 is home, else 0: admissible, not consistent."""
     return optimal_distance(state) if state[0] == 1 else 0
 
 

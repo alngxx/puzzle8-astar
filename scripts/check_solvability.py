@@ -1,11 +1,6 @@
-"""Hand-checkable sanity check for the solvability parity rule.
+"""Print each case's inverted pairs so the parity rule can be checked by hand.
 
-For each case it prints the board, the tile order with the blank removed, and
-every inverted pair it found, so each line can be checked by hand. Solvable
-cases are built by applying moves to the goal, which proves they're reachable.
-Unsolvable cases rely on the parity argument in board.is_solvable.
-
-Run from the repo root:  python scripts/check_solvability.py
+Run from the repo root: python scripts/check_solvability.py
 """
 
 import sys

@@ -46,11 +46,9 @@ def test_parse_rejects_bad_input_with_specific_message(text, message):
 
 
 @pytest.mark.parametrize("text, tile", [
-    # str.isdigit() is True for both, but int() treats them differently:
-    # it rejects the superscript (raising a bare ValueError, not ParseError)
-    # and silently accepts the Arabic-Indic digit as a real tile.
-    ("12345678²", "'²'"),                      # superscript two
-    ("١٢٣٤٥٦٧٨٠", "'١'"),  # Arabic-Indic 1-8,0
+    # isdigit() accepts both; int() rejects '²' and silently parses '١'.
+    ("12345678²", "'²'"),
+    ("١٢٣٤٥٦٧٨٠", "'١'"),
 ])
 def test_parse_rejects_non_ascii_digits(text, tile):
     with pytest.raises(ParseError, match=f"invalid tile {tile}"):
@@ -68,7 +66,6 @@ def test_neighbour_counts_by_blank_position():
 
 
 def test_move_then_inverse_returns_original():
-    # Blank at every one of the 9 positions, every legal move.
     for blank in range(9):
         tiles = iter([1, 2, 3, 4, 5, 6, 7, 8])
         state = tuple(0 if i == blank else next(tiles) for i in range(9))
@@ -89,8 +86,7 @@ def test_blank_direction_convention():
 
 
 def test_illegal_move_reports_step():
-    # From GOAL: U (blank up), D (back to bottom-right), then D again is off
-    # the board -- the 3rd move, counted from 1.
+    # U, D, then D again runs off the board on move 3.
     with pytest.raises(IllegalMoveError, match="move 3: move D is illegal"):
         apply_moves(GOAL, "UDD")
 
@@ -116,7 +112,6 @@ def test_known_unsolvable_state_rejected():
 
 
 def test_states_reached_by_legal_moves_stay_solvable():
-    # Parity is invariant under moves: walk around and check every step.
     state = GOAL
     for move in "ULURDDLURDLLUURDRULDDR":
         state = apply_moves(state, move)

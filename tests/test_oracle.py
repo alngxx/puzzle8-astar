@@ -5,10 +5,7 @@ import pytest
 from puzzle8.board import GOAL, apply_moves, is_solvable, neighbours, parse_state
 from puzzle8.oracle import SOLVABLE_STATES, distances, optimal_distance
 
-# The longest optimal solution in the 8-puzzle is 31 moves. This is a known
-# published property of the puzzle, not something derived from this code, so
-# it is an independent check on the oracle: if the BFS disagrees, the BFS is
-# wrong.
+# Known property of the 8-puzzle, independent of this code.
 MAX_OPTIMAL_DISTANCE = 31
 
 
@@ -33,10 +30,7 @@ def test_maximum_distance_is_31():
 
 
 def test_every_state_steps_down_towards_the_goal():
-    # A shortest-path table has two properties that together pin it down:
-    # no neighbour is more than one move further or nearer, and every state
-    # other than the goal has a neighbour exactly one move nearer -- the next
-    # step of an optimal solution. Checked over the whole space.
+    # These two checks pin down a shortest-path table.
     table = distances()
     for state, distance in table.items():
         neighbour_distances = [table[n] for _, n in neighbours(state)]
@@ -49,10 +43,7 @@ def test_every_state_steps_down_towards_the_goal():
 
 # --- Hand-checkable cases ----------------------------------------------------
 
-# (moves applied to the goal, the state they produce, the distance back)
-# Each is reachable in exactly that many moves, so the distance can be no
-# more; the oracle claiming fewer would mean it found a shortcut that the
-# trace below prints in full for checking.
+# (moves from the goal, resulting state, oracle distance)
 TRACES = [
     ("", "123456780", 0),
     ("L", "123456708", 1),

@@ -1,10 +1,6 @@
-"""Command-line interface: python -m puzzle8 {solve,random,compare} ...
+"""Command-line interface: python -m puzzle8 {solve,random,compare}.
 
-Exit codes:
-  0  solved (or, for random/compare, finished)
-  1  the state is unsolvable -- rejected before any search
-  2  bad input: malformed state, bad option, unwritable CSV path
-  3  internal error: a bug, reported as one line rather than a traceback
+Exit codes: 0 ok, 1 unsolvable, 2 bad input, 3 internal error.
 """
 
 import argparse
@@ -43,7 +39,7 @@ BOARDS_PER_ROW = 7
 
 
 class BadInput(Exception):
-    """User error: reported as a one-line message with exit code 2."""
+    """User error, reported in one line with exit code 2."""
 
 
 def _label(state):
@@ -116,8 +112,7 @@ def _board_sequence(state, path):
 def cmd_random(args):
     if not 0 <= args.depth <= MAX_DEPTH:
         raise BadInput(f"--depth must be between 0 and {MAX_DEPTH}, got {args.depth}")
-    # Drawn from the oracle's states at exactly this depth: a random walk of
-    # D moves can land closer than D.
+    # Sampled from the oracle: a D-move random walk can end closer than D.
     state = random.Random(args.seed).choice(states_at_depth(args.depth))
     print(_label(state))
     return EXIT_OK
@@ -130,7 +125,7 @@ def cmd_compare(args):
         raise BadInput(f"--per-bucket must be at least 1, got {args.per_bucket}")
     seed = args.seed if args.seed is not None else random.randrange(1_000_000)
 
-    # Opened before the run, so a bad path fails at once, not after it.
+    # Open first so a bad path fails before the run, not after.
     csv_file = None
     if args.csv:
         try:
@@ -194,7 +189,7 @@ def main(argv=None):
     try:
         args = parser.parse_args(argv)
     except SystemExit as e:
-        # argparse has already printed usage and the error (or the help text).
+        # argparse has already printed the message.
         return e.code if isinstance(e.code, int) else EXIT_BAD_INPUT
 
     try:
@@ -205,6 +200,6 @@ def main(argv=None):
     except KeyboardInterrupt:
         print("interrupted", file=sys.stderr)
         return 130
-    except Exception as e:  # a bug, not bad input -- still no traceback
+    except Exception as e:  # a bug; still no traceback
         print(f"internal error: {type(e).__name__}: {e}", file=sys.stderr)
         return EXIT_INTERNAL

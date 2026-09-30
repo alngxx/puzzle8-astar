@@ -17,7 +17,7 @@ REPO = Path(__file__).resolve().parent.parent
 def run(capsys, *argv):
     code = main(list(argv))
     out, err = capsys.readouterr()
-    # Whatever happened, the user never sees a Python traceback.
+    # No path may show a traceback.
     assert "Traceback" not in out + err
     return code, out, err
 
@@ -64,7 +64,7 @@ def test_no_stats_without_the_flag(capsys):
 
 def test_show_boards_prints_every_state_on_the_path(capsys):
     _, out, _ = run(capsys, "solve", "123405786", "--show-boards")
-    # UL from the goal made this state, so the solution is 2 moves: RD.
+    # Two moves from the goal (UL), so the solution is RD.
     assert moves_from(out) == "RD"
     assert "start   1 R     2 D" in out
     assert "1 2 3   1 2 3   1 2 3\n4 . 5   4 5 .   4 5 6\n7 8 6   7 8 6   7 8 ." in out

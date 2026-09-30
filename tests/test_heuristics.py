@@ -10,8 +10,6 @@ from puzzle8.oracle import distances, optimal_distance
 # --- Exhaustive properties, checked against the oracle -----------------------
 
 def test_manhattan_never_overestimates():
-    # Admissibility over every solvable state, not a sample: this is what
-    # guarantees A* returns optimal solutions.
     worst = None
     for state, true_distance in distances().items():
         estimate = manhattan(state)
@@ -21,15 +19,11 @@ def test_manhattan_never_overestimates():
         gap = true_distance - estimate
         if worst is None or gap > worst[0]:
             worst = (gap, state)
-    # Sanity on the check itself: the bound is tight somewhere (the goal) and
-    # loose elsewhere, so the loop really is comparing varying values.
+    # Guard against a vacuous check: the bound must be loose somewhere.
     assert worst[0] > 0
 
 
 def test_manhattan_is_consistent():
-    # |h(s) - h(s')| <= 1 for every edge: one move slides one tile one cell,
-    # so the estimate cannot jump. Consistency means A* never needs to revisit
-    # a state it has already expanded.
     for state in distances():
         estimate = manhattan(state)
         for _, neighbour in neighbours(state):
@@ -58,7 +52,7 @@ def test_manhattan_hand_cases(text, expected, _why):
 
 
 def _manhattan_directly(state):
-    """The same sum, worked out from scratch without the lookup table."""
+    """Manhattan without the lookup table."""
     total = 0
     for index, tile in enumerate(state):
         if tile == 0:
@@ -69,15 +63,11 @@ def _manhattan_directly(state):
 
 
 def test_lookup_table_matches_a_direct_calculation():
-    # The table is precomputed at import; recompute the long way over the
-    # whole state space to confirm it was built correctly, and that skipping
-    # the blank is what the table does too.
     for state in distances():
         assert manhattan(state) == _manhattan_directly(state)
 
 
 def test_estimate_changes_by_at_most_one_along_a_real_solution():
-    # Walk a concrete path and watch the estimate track the true distance.
     state = GOAL
     for move in "ULDRUL":
         previous = manhattan(state)
@@ -104,8 +94,7 @@ def test_linear_conflict_is_consistent():
 
 
 def test_linear_conflict_never_below_manhattan():
-    # It only ever adds to Manhattan, so it must be at least as informed.
-    # Strictly above somewhere, or the extra term would be doing nothing.
+    # ...and strictly above somewhere, or the penalty does nothing.
     strictly_above = 0
     for state in distances():
         assert linear_conflict(state) >= manhattan(state)
@@ -114,11 +103,7 @@ def test_linear_conflict_never_below_manhattan():
 
 
 def _lc_directly(state):
-    """Linear conflict worked out without the tables or the DP.
-
-    The fewest tiles to lift out of a line is found by brute force: try the
-    largest subsets first, and keep the first one already in goal order.
-    """
+    """Linear conflict by brute force, without the tables or the LIS DP."""
     def lift(goal_positions):
         n = len(goal_positions)
         for keep in range(n, 0, -1):
@@ -162,7 +147,7 @@ def test_linear_conflict_hand_cases(text, expected_manhattan, expected_lc, _why)
 
 
 def _pairwise_conflicts(state):
-    """The naive variant: +2 for every out-of-order pair in a goal line."""
+    """Naive variant: +2 per out-of-order pair in a goal line."""
     extra = 0
     for r in range(3):
         row = [t for t in state[3 * r:3 * r + 3] if t and GOAL_ROW[t] == r]
@@ -174,9 +159,7 @@ def _pairwise_conflicts(state):
 
 
 def test_counting_pairs_instead_would_be_inadmissible():
-    # Why the longest-in-order rule matters: on this state the pairwise
-    # version overestimates the true distance, so A* using it could return
-    # a non-optimal path. The real heuristic is exactly right here.
+    # The pairwise variant overestimates here; linear conflict is exact.
     state = parse_state("870654321")
     assert optimal_distance(state) == 26
     assert _pairwise_conflicts(state) == 28

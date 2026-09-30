@@ -8,7 +8,7 @@ from puzzle8.search import UnsolvableError, astar
 
 
 def assert_solves(state, result):
-    """Replay the path independently; never trust the search's bookkeeping."""
+    """Replay the path rather than trust the search."""
     assert apply_moves(state, result.path) == GOAL
 
 
@@ -17,7 +17,7 @@ def assert_solves(state, result):
 def test_solved_state_needs_no_moves():
     result = astar(GOAL)
     assert result.path == ""
-    # The start is popped and passes the goal test before it is expanded.
+    # Goal test on pop: the start is never expanded.
     assert result.nodes_expanded == 0
 
 
@@ -39,9 +39,7 @@ def test_moderately_scrambled_state_replays_to_goal():
 
 
 def test_random_states_match_oracle():
-    # 200 states drawn uniformly from the whole solvable space, seeded so any
-    # failure is reproducible. Sorted first so the sample doesn't depend on
-    # dict ordering.
+    # Sorted so the seeded sample doesn't depend on dict order.
     rng = random.Random(41052)
     for state in rng.sample(sorted(distances()), 200):
         result = astar(state)
@@ -52,8 +50,7 @@ def test_random_states_match_oracle():
 @pytest.mark.parametrize("text", ["867254301", "647850321"])
 def test_hardest_instances(text):
     state = parse_state(text)
-    # Confirm the claim before relying on it: these should be the two states
-    # the oracle places at the maximum depth.
+    # Check the oracle agrees before relying on it.
     assert optimal_distance(state) == 31
     result = astar(state)
     assert result.length == 31
@@ -83,7 +80,7 @@ def test_search_is_deterministic():
 
 def test_counters_are_coherent():
     result = astar(parse_state("724506831"))
-    # Every expansion was preceded by a push, and the goal is pushed too.
+    # Every expanded state and the goal were pushed first.
     assert result.nodes_generated > result.nodes_expanded > 0
     assert 1 <= result.max_frontier <= result.nodes_generated
     assert result.seconds >= 0
