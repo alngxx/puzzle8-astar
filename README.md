@@ -15,7 +15,7 @@ linear conflict sometimes expands more nodes than Manhattan, see the report.
 
 [![Watch the demo video](demo-thumbnail.jpg)](demo.mp4)
 
-A screen recording (9 min 52 s) of the code and the tool running. Click the
+A screen recording (9:52) of demo walkthrough. Click the
 image to play it, or open [demo.mp4](demo.mp4) directly.
 
 ## Requirements
